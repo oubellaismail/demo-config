@@ -1,0 +1,33 @@
+# External reach for demo-web at demo.project-demo.tech. TLS is issued + renewed automatically
+# by cert-manager (the letsencrypt ClusterIssuer, DNS-01) into demo-web-tls, and
+# routed by the nginx ingress controller with rate-limiting at the front door.
+# The platform-wide ModSecurity/OWASP-CRS WAF runs on the ingress controller, so
+# it covers this route without any per-Ingress annotation.
+# (Only generated when onboard.sh is given a --host.)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-web
+  namespace: demo
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    # Rate-limiting at the front door (flood protection).
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+    nginx.ingress.kubernetes.io/limit-connections: "15"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - demo.project-demo.tech
+      secretName: demo-web-tls
+  rules:
+    - host: demo.project-demo.tech
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: demo-web
+                port:
+                  number: 3000

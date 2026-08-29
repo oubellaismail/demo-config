@@ -1,0 +1,25 @@
+# Least-privilege network rules for demo-app (the demo project's internal backend),
+# on top of the namespace default-deny floor (networkpolicy.yaml). demo-app is NOT
+# public — it is reached only by demo-web. So the single ingress rule accepts 3000
+# ONLY from demo-web pods; nothing else in the namespace (and nothing external) can
+# reach it. DNS egress is already granted namespace-wide (dns-egress.cnp.yaml).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-demo-app-from-demo-web
+  namespace: demo
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  endpointSelector:
+    matchLabels:
+      app: demo-app
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: demo-web
+            io.kubernetes.pod.namespace: demo
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
