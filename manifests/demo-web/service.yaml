@@ -1,0 +1,18 @@
+# Stable in-cluster address for demo-web. ClusterIP only — external reach (if any)
+# is via the Ingress, never straight at the Service; the NetworkPolicy still
+# governs who may actually connect.
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-web
+  namespace: demo
+  labels:
+    app: demo-web
+spec:
+  type: ClusterIP
+  selector:
+    app: demo-web
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http

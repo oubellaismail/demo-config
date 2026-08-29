@@ -1,0 +1,45 @@
+# Least-privilege network rules for demo-web (the demo project's public frontend),
+# on top of the namespace default-deny floor (networkpolicy.yaml). Two rules:
+#   1. ingress — accept 3000 from the ingress controller (north-south entry).
+#   2. egress  — reach demo-app on 3000 (the web -> app hop). With the default-deny
+#      floor, demo-web can reach ONLY demo-app plus DNS; nothing else.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-ingress-to-demo-web
+  namespace: demo
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  endpointSelector:
+    matchLabels:
+      app: demo-web
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: platform-ingress
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-demo-web-to-demo-app
+  namespace: demo
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  endpointSelector:
+    matchLabels:
+      app: demo-web
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            app: demo-app
+            io.kubernetes.pod.namespace: demo
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
